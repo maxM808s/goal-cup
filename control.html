@@ -278,9 +278,15 @@ function drawPicker(q){
 }
 function addTeam(t){
   if (entrants.length >= 16) return alert('16 teams max.');
-  const heb = $('heb').checked && t[5];
+  const isHeb = s => s && /[\u0590-\u05FF]/.test(s);
+  const isIso = s => s && /^[a-z]{2}(-[a-z]{2,4})?$/.test(s);
+  // t[5] is either hebrew name or iso code (for non-hebrew teams)
+  // t[6] is iso code when t[5] is hebrew
+  const heb  = $('heb').checked && isHeb(t[5]) ? t[5] : null;
+  const iso  = isIso(t[6]) ? t[6] : (isIso(t[5]) ? t[5] : null);
+  const logo = !iso && !!t[2] === false;  // clubs with no flag emoji and no iso get logo lookup
   entrants.push({ id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2,5),
-    name: heb || t[0], abbr: t[1], flag: t[2], c1: t[3], c2: t[4], logo: true });
+    name: heb || t[0], abbr: t[1], flag: t[2]||null, c1: t[3], c2: t[4], logo: !iso && !t[2], iso });
   drawEntrants(); drawPicker($('search').value); saveEntrants();
 }
 $('search').oninput = e => drawPicker(e.target.value);
