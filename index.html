@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal Cup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Rubik:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#070d24; --panel:#101c44; --line:rgba(255,255,255,.14);
+    --gold:#ffcf3f; --blue:#3ba0ff; --orange:#ff9b2f;
+    --grass-a:#2f9e4f; --grass-b:#268a45; --chalk:rgba(255,255,255,.5);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:Rubik,system-ui,sans-serif;background:#04081a;color:#fff;overflow:hidden;
+    display:grid;place-items:center;-webkit-font-smoothing:antialiased;
+  }
+  #app{
+    position:relative;display:flex;flex-direction:column;background:var(--night);overflow:hidden;
+    width:min(100vw,calc(100vh * 9 / 16));height:min(100vh,calc(100vw * 16 / 9));
+  }
+  body[data-layout="4:5"]  #app{width:min(100vw,calc(100vh * 4 / 5));height:min(100vh,calc(100vw * 5 / 4))}
+  body[data-layout="1:1"]  #app{width:min(100vw,100vh);height:min(100vw,100vh)}
+  body[data-layout="16:9"] #app{width:min(100vw,calc(100vh * 16 / 9));height:min(100vh,calc(100vw * 9 / 16))}
+  body[data-layout="fill"] #app{width:100vw;height:100vh}
+
+  /* ---------- top bar ---------- */
+  .top{
+    flex:0 0 auto;text-align:center;padding:7px 10px 6px;
+    background:linear-gradient(180deg,#0d1a45,#0a1436);
+    border-bottom:2px solid var(--line);
+  }
+  .top .rd{font-family:Anton,Rubik,sans-serif;letter-spacing:.05em;color:var(--gold);
+    font-size:clamp(14px,2.6vh,24px);text-shadow:0 2px 0 #6b3d00}
+  .top .ttl{font-size:clamp(10px,1.7vh,14px);opacity:.85;font-weight:700;margin-top:1px}
+
+  /* ---------- tug bar ---------- */
+  .tug{
+    flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 10px;
+    background:#0a1436;border-bottom:2px solid var(--line);
+  }
+  .tug .sc{font-family:Anton,sans-serif;font-size:clamp(22px,4.4vh,44px);line-height:1;min-width:1.4em;text-align:center}
+  .tug .sc.a{color:var(--blue)}.tug .sc.b{color:var(--orange)}
+  .barwrap{flex:1;position:relative;height:clamp(14px,2.6vh,26px);border-radius:99px;overflow:hidden;
+    background:var(--orange);box-shadow:inset 0 2px 5px rgba(0,0,0,.45)}
+  .barfill{position:absolute;inset:0 auto 0 0;background:var(--blue);width:50%;
+    transition:width .45s cubic-bezier(.22,.9,.28,1)}
+  .barwrap .vs{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    font-family:Anton,sans-serif;font-size:clamp(9px,1.5vh,13px);color:#08122f;z-index:2;
+    background:#fff;border-radius:99px;padding:1px 6px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .pcts{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;
+    padding:0 9px;font-size:clamp(8px,1.4vh,12px);font-weight:900;z-index:1;
+    text-shadow:0 1px 2px rgba(0,0,0,.5)}
+
+  /* ---------- pitch ---------- */
+  .pitch{
+    position:relative;flex:1 1 auto;min-height:0;overflow:hidden;
+    background:repeating-linear-gradient(90deg,var(--grass-a) 0 9%,var(--grass-b) 9% 18%);
+    border-bottom:2px solid var(--line);
+  }
+  .pitch::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:3px;
+    background:var(--chalk);transform:translateX(-50%)}
+  .pitch::after{content:"";position:absolute;left:50%;top:50%;width:26%;aspect-ratio:1;
+    transform:translate(-50%,-50%);border:3px solid var(--chalk);border-radius:50%}
+  .pbox{position:absolute;top:22%;bottom:22%;width:11%;border:3px solid var(--chalk)}
+  .pbox.l{left:0;border-left:0}.pbox.r{right:0;border-right:0}
+
+  .side{position:absolute;top:50%;transform:translateY(-50%);z-index:3;text-align:center;width:26%}
+  .side.a{left:3%}.side.b{right:3%}
+  .side .crest{width:clamp(46px,11vh,110px);height:clamp(46px,11vh,110px);object-fit:contain;
+    display:block;margin:0 auto;filter:drop-shadow(0 5px 8px rgba(0,0,0,.5))}
+  .side .crest.chip{border-radius:14px;display:grid;place-items:center;font-family:Anton,sans-serif;
+    font-size:clamp(16px,3.4vh,32px)}
+  .side .flagmark{font-size:clamp(40px,9.5vh,96px);line-height:1;display:block}
+  .side .nm{margin-top:5px;font-weight:900;font-size:clamp(10px,1.9vh,16px);
+    background:rgba(6,12,32,.8);border-radius:7px;padding:2px 6px;display:inline-block;
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .side.win .crest{animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{50%{transform:scale(1.07)}}
+
+  .ball{position:absolute;top:50%;left:50%;z-index:4;width:clamp(26px,5.4vh,54px);height:clamp(26px,5.4vh,54px);
+    transform:translate(-50%,-50%);transition:left .5s cubic-bezier(.22,.9,.28,1);
+    filter:drop-shadow(0 5px 6px rgba(0,0,0,.45))}
+  .ball.spin{animation:roll .5s linear}
+  @keyframes roll{to{transform:translate(-50%,-50%) rotate(360deg)}}
+
+  .timer{
+    position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:6;
+    background:rgba(6,12,32,.88);border:2px solid var(--line);border-radius:99px;
+    padding:3px 14px;font-family:Anton,sans-serif;font-size:clamp(14px,2.8vh,28px);
+    display:flex;align-items:center;gap:7px
+  }
+  .timer .dot{width:8px;height:8px;border-radius:50%;background:#3ddc72}
+  .timer.low{color:#ff6b6b;border-color:#ff6b6b}
+  .timer.low .dot{background:#ff6b6b;animation:blink .6s steps(2) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  .hint{
+    position:absolute;left:50%;bottom:7px;transform:translateX(-50%);z-index:5;white-space:nowrap;
+    background:rgba(6,12,32,.8);border-radius:7px;padding:3px 10px;
+    font-size:clamp(9px,1.6vh,13px);font-weight:700
+  }
+
+  /* goal popup */
+  .goalpop{
+    position:absolute;left:50%;top:26%;transform:translate(-50%,-50%);z-index:9;
+    background:rgba(6,12,32,.94);border:3px solid var(--gold);border-radius:14px;
+    padding:9px 18px;text-align:center;display:none;animation:slam .45s cubic-bezier(.2,1.6,.4,1)
+  }
+  .goalpop.on{display:block}
+  .goalpop .g{font-family:Anton,sans-serif;color:var(--gold);font-size:clamp(20px,4.2vh,42px);line-height:1}
+  .goalpop .t{font-weight:900;font-size:clamp(13px,2.4vh,24px);margin-top:2px}
+  .goalpop .u{opacity:.75;font-size:clamp(9px,1.6vh,13px);margin-top:2px}
+  @keyframes slam{0%{transform:translate(-50%,-50%) scale(2);opacity:0}60%{transform:translate(-50%,-50%) scale(.95)}100%{transform:translate(-50%,-50%) scale(1)}}
+
+  /* ---------- gift shelves ---------- */
+  .shelves{flex:0 0 auto;display:flex;gap:5px;padding:6px;background:#0a1436;border-bottom:2px solid var(--line)}
+  .shelf{flex:1;display:flex;gap:4px;justify-content:center;background:rgba(255,255,255,.05);
+    border-radius:9px;padding:4px 3px;border:2px solid transparent}
+  .shelf.a{border-color:rgba(59,160,255,.45)}
+  .shelf.b{border-color:rgba(255,155,47,.45)}
+  .gslot{flex:1;text-align:center;min-width:0}
+  .gicon{width:clamp(20px,4vh,40px);height:clamp(20px,4vh,40px);object-fit:contain;display:block;margin:0 auto}
+  .gicon.emo{font-size:clamp(17px,3.4vh,34px);line-height:1;display:grid;place-items:center}
+  .gslot .c{font-size:clamp(8px,1.4vh,12px);font-weight:900;color:var(--gold);margin-top:1px}
+  .gslot.hit{animation:hit .45s ease-out}
+  @keyframes hit{30%{transform:scale(1.3)}}
+
+  /* ---------- bracket ---------- */
+  .bracket{
+    flex:0 0 auto;height:34%;overflow:hidden;padding:6px;display:flex;gap:4px;
+    background:linear-gradient(180deg,#0a1436,#070d24)
+  }
+  .col{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:3px;min-width:0}
+  .fix{
+    background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:6px;
+    padding:2px 4px;display:flex;flex-direction:column;gap:1px;font-size:clamp(7px,1.15vh,11px);
+    font-weight:700;overflow:hidden
+  }
+  .fix.now{border-color:var(--gold);background:rgba(255,207,63,.15);box-shadow:0 0 0 1px var(--gold)}
+  .fix .r{display:flex;align-items:center;gap:3px;min-width:0}
+  .fix .r span.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fix .r.lost{opacity:.35}
+  .fix .r.won .nm{color:var(--gold)}
+  .fix .crest{width:clamp(10px,1.9vh,17px);height:clamp(10px,1.9vh,17px);object-fit:contain;flex:0 0 auto}
+  .fix .crest.chip{border-radius:3px;display:grid;place-items:center;font-size:5px}
+  .fix .flagmark{font-size:clamp(9px,1.7vh,15px);line-height:1}
+  .colhead{font-size:clamp(7px,1.1vh,10px);text-transform:uppercase;letter-spacing:.08em;
+    opacity:.5;text-align:center;margin-bottom:1px}
+
+  /* ---------- champion ---------- */
+  #champ{
+    position:absolute;inset:0;z-index:30;display:none;place-items:center;text-align:center;
+    background:radial-gradient(circle at 50% 45%,rgba(0,0,0,.4),rgba(0,0,0,.88))
+  }
+  #champ.on{display:grid}
+  #champ .cup{font-size:clamp(50px,13vh,130px)}
+  #champ .w{font-family:Anton,sans-serif;color:var(--gold);font-size:clamp(26px,6vh,60px);letter-spacing:.03em}
+  #champ .n{font-weight:900;font-size:clamp(16px,3.4vh,34px);margin-top:4px}
+  #confetti{position:absolute;inset:0;z-index:31;pointer-events:none}
+
+  .warn{
+    position:absolute;inset:0;z-index:50;display:none;place-items:center;padding:24px;
+    background:#070d24;text-align:center
+  }
+  .warn.on{display:grid}
+  .warn h2{font-family:Anton,sans-serif;color:var(--gold);font-size:22px;margin-bottom:8px}
+  .warn p{font-size:13px;opacity:.85;line-height:1.6;max-width:34ch;margin:0 auto}
+  .warn code{background:#101c44;padding:2px 6px;border-radius:5px;font-size:12px}
+
+  .off{position:absolute;right:8px;top:8px;z-index:40;background:#c0392b;border-radius:99px;
+    padding:2px 9px;font-size:11px;font-weight:700;display:none}
+  .off.on{display:block}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="off" id="off">מנותק</div>
+
+  <div class="top">
+    <div class="rd" id="roundLabel">GOAL CUP</div>
+    <div class="ttl" id="title"></div>
+  </div>
+
+  <div class="tug">
+    <div class="sc a" id="scoreA">0</div>
+    <div class="barwrap">
+      <div class="barfill" id="barfill"></div>
+      <div class="pcts"><span id="pctA">50%</span><span id="pctB">50%</span></div>
+      <div class="vs">VS</div>
+    </div>
+    <div class="sc b" id="scoreB">0</div>
+  </div>
+
+  <div class="pitch" id="pitch">
+    <div class="pbox l"></div><div class="pbox r"></div>
+    <div class="timer" id="timer"><span class="dot"></span><span id="clock">0:00</span></div>
+    <div class="side a" id="sideA"></div>
+    <div class="side b" id="sideB"></div>
+    <svg class="ball" id="ball" viewBox="0 0 64 64">
+      <circle cx="32" cy="32" r="30" fill="#fff" stroke="#0d1b2a" stroke-width="3"/>
+      <path d="M32 10l14 10-5.3 16.5H23.3L18 20z" fill="#0d1b2a"/>
+      <path d="M32 54l-9-6 4-8h10l4 8z" fill="#0d1b2a" opacity=".85"/>
+    </svg>
+    <div class="hint" id="hint">שלחו מתנה כדי להזיז את הכדור</div>
+    <div class="goalpop" id="goalpop">
+      <div class="g">!גוווול</div><div class="t" id="goalTeam"></div><div class="u" id="goalUser"></div>
+    </div>
+  </div>
+
+  <div class="shelves">
+    <div class="shelf a" id="shelfA"></div>
+    <div class="shelf b" id="shelfB"></div>
+  </div>
+
+  <div class="bracket" id="bracket"></div>
+
+  <canvas id="confetti"></canvas>
+  <div id="champ">
+    <div>
+      <div class="cup">&#127942;</div>
+      <div class="w">האלופה</div>
+      <div class="n" id="champName"></div>
+    </div>
+  </div>
+
+  <div class="warn" id="warn">
+    <div>
+      <h2>עוד לא מחובר</h2>
+      <p>Open <code>firebase-config.js</code> and paste your Realtime Database URL, API key and a private room name. The setup guide walks through it step by step.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="common.js"></script>
+<script>
+/* ============================================================
+   The overlay is the engine: it reads gift events, moves the
+   ball, scores goals, ends matches and advances the bracket.
+   Keep exactly ONE overlay open, or gifts get counted twice.
+   ============================================================ */
+
+let cfg = defaultConfig();
+let st  = defaultState();
+let skew = 0;                       // firebase server clock - local clock
+let dirty = false, saving = false;
+
+const $ = id => document.getElementById(id);
+const now = () => Date.now() + skew;
+
+if (!CONFIGURED) $('warn').classList.add('on');
+
+/* ---------- rendering ---------- */
+
+function currentFixture(){
+  const r = st.rounds[st.round];
+  return r ? r[st.match] : null;
+}
+
+function render(){
+  const fx = currentFixture();
+  const A = fx && fx.a, B = fx && fx.b;
+
+  $('title').textContent = cfg.title || '';
+  $('roundLabel').textContent = st.phase === 'champion' ? 'GOAL CUP'
+    : (st.rounds.length ? roundName(st.rounds, st.round) : 'GOAL CUP') +
+      (fx ? ' \u00B7 ' + (st.match + 1) + '/' + st.rounds[st.round].length : '');
+
+  $('sideA').innerHTML = A ? teamMarkHTML(A) + `<div class="nm">${esc(A.name)}</div>` : '';
+  $('sideB').innerHTML = B ? teamMarkHTML(B) + `<div class="nm">${esc(B.name)}</div>` : '';
+  $('sideA').classList.toggle('win', st.phase === 'ended' && st.scoreA > st.scoreB);
+  $('sideB').classList.toggle('win', st.phase === 'ended' && st.scoreB > st.scoreA);
+
+  $('scoreA').textContent = st.scoreA;
+  $('scoreB').textContent = st.scoreB;
+
+  const total = st.coinsA + st.coinsB;
+  const share = total ? st.coinsA / total : 0.5;
+  $('barfill').style.width = (share * 100).toFixed(1) + '%';
+  $('pctA').textContent = Math.round(share * 100) + '%';
+  $('pctB').textContent = (100 - Math.round(share * 100)) + '%';
+
+  $('ball').style.left = (50 + Math.max(-1, Math.min(1, st.ball)) * 38) + '%';
+
+  shelf('shelfA', cfg.leftGifts);
+  shelf('shelfB', cfg.rightGifts);
+  drawBracket();
+
+  $('champ').classList.toggle('on', st.phase === 'champion');
+  if (st.phase === 'champion' && st.champion) $('champName').textContent = st.champion.name;
+  $('hint').textContent = st.phase === 'live' ? 'שלחו מתנה כדי להזיז את הכדור'
+    : st.phase === 'ended' ? 'המשחק הבא מתחיל עוד רגע'
+    : 'המשחק מתחיל בקרוב';
+}
+
+function shelf(id, gifts){
+  const el = $(id);
+  const key = (gifts || []).join('|');
+  if (el.dataset.key === key) return;
+  el.dataset.key = key;
+  el.innerHTML = (gifts || []).filter(Boolean).map(g =>
+    `<div class="gslot" data-g="${esc(norm(g))}">${giftIconHTML(g)}<div class="c">${fmt(priceOf(g))}</div></div>`
+  ).join('');
+}
+
+function drawBracket(){
+  const el = $('bracket');
+  if (!st.rounds.length) { el.innerHTML = ''; return; }
+  el.innerHTML = st.rounds.map((round, r) =>
+    `<div class="col"><div class="colhead">${roundName(st.rounds, r)}</div>` +
+    round.map((m, i) => {
+      const live = r === st.round && i === st.match && st.phase !== 'champion';
+      return `<div class="fix ${live ? 'now' : ''}">` +
+        row(m.a, m.winner) + row(m.b, m.winner) + `</div>`;
+    }).join('') + `</div>`
+  ).join('');
+}
+function row(t, winner){
+  if (!t) return `<div class="r" style="opacity:.25"><span class="nm">—</span></div>`;
+  const won = winner && winner.id === t.id;
+  const lost = winner && !won;
+  return `<div class="r ${won ? 'won' : ''} ${lost ? 'lost' : ''}">` +
+         teamMarkHTML(t) + `<span class="nm">${esc(t.name)}</span></div>`;
+}
+
+/* ---------- clock ---------- */
+
+function tick(){
+  const t = $('timer');
+  let left = 0;
+  if (st.phase === 'live') left = st.paused ? st.pausedLeft : Math.max(0, st.endsAt - now());
+  else if (st.phase === 'ended') left = 0;
+  const secs = Math.ceil(left / 1000);
+  $('clock').textContent = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+  t.classList.toggle('low', st.phase === 'live' && secs <= 10);
+
+  if (st.phase === 'live' && !st.paused && left <= 0) endMatch();
+  requestAnimationFrame(() => {});
+}
+setInterval(tick, 250);
+
+/* ---------- the engine ---------- */
+
+function sideForGift(name){
+  const n = norm(name);
+  if ((cfg.leftGifts  || []).some(g => norm(g) === n)) return 'a';
+  if ((cfg.rightGifts || []).some(g => norm(g) === n)) return 'b';
+  return null;
+}
+
+function applyEvent(ev){
+  const gift = ev.gift || '';
+  const side = sideForGift(gift);
+  if (!side) return;
+
+  const slot = document.querySelector(`#shelf${side === 'a' ? 'A' : 'B'} .gslot[data-g="${norm(gift)}"]`);
+  if (slot) { slot.classList.add('hit'); setTimeout(() => slot.classList.remove('hit'), 460); }
+
+  if (st.phase !== 'live' || st.paused) return;
+
+  let coins = Number(ev.coins);
+  if (!Number.isFinite(coins) || coins <= 0) coins = priceOf(gift);
+  const count = Math.max(1, Number(ev.count) || 1);
+  coins = coins * count;
+
+  if (side === 'a') st.coinsA += coins; else st.coinsB += coins;
+  st.ball += (side === 'a' ? 1 : -1) * (coins / Math.max(1, cfg.coinsPerGoal));
+  $('ball').classList.remove('spin'); void $('ball').offsetWidth; $('ball').classList.add('spin');
+
+  if (st.ball >= 1)      scoreGoal('a', ev.user);
+  else if (st.ball <= -1) scoreGoal('b', ev.user);
+
+  dirty = true;
+  render();
+}
+
+function scoreGoal(side, user){
+  const fx = currentFixture(); if (!fx) return;
+  if (side === 'a') st.scoreA++; else st.scoreB++;
+  st.ball = 0;
+  const team = side === 'a' ? fx.a : fx.b;
+  $('goalTeam').textContent = team ? team.name : '';
+  $('goalUser').textContent = user ? '\u{1F381} ' + user : '';
+  $('goalpop').classList.add('on');
+  cheer();
+  setTimeout(() => $('goalpop').classList.remove('on'), 3200);
+
+  // golden goal: first goal of extra time settles it
+  if (st.golden) endMatch();
+  dirty = true;
+}
+
+function endMatch(){
+  const fx = currentFixture(); if (!fx) return;
+
+  if (st.scoreA === st.scoreB && cfg.goldenGoal && !st.golden){
+    st.golden = true;
+    st.endsAt = now() + 5 * 60 * 1000;      // runs until someone scores
+    $('goalTeam').textContent = 'GOLDEN GOAL';
+    $('goalUser').textContent = 'הגול הבא מנצח';
+    $('goalpop').classList.add('on');
+    setTimeout(() => $('goalpop').classList.remove('on'), 3500);
+    dirty = true; save(); return;
+  }
+
+  const winner = st.scoreA >= st.scoreB ? fx.a : fx.b;   // a draw with golden goal off goes to A
+  fx.winner = winner;
+  st.golden = false;
+  st.phase = 'ended';
+  autoAdvanceByes(st.rounds);
+  save();
+
+  const next = nextFixture(st.rounds);
+  if (!next){
+    setTimeout(() => { st.phase = 'champion'; st.champion = winner; confettiBurst(); cheer(); save(); render(); }, 3500);
+  } else if (cfg.autoNext){
+    setTimeout(() => startFixture(next), Math.max(3, cfg.nextDelay || 8) * 1000);
+  }
+  render();
+}
+
+function startFixture(fx){
+  st.round = fx.round; st.match = fx.match;
+  st.scoreA = st.scoreB = 0; st.coinsA = st.coinsB = 0;
+  st.ball = 0; st.golden = false; st.paused = false;
+  st.phase = 'live';
+  st.startedAt = now();
+  st.endsAt = st.startedAt + Math.max(10, cfg.duration) * 1000;
+  save(); render();
+}
+
+/* ---------- saving (throttled so we don't hammer the database) ---------- */
+
+function save(){ dirty = true; }
+setInterval(() => {
+  if (!dirty || saving || !CONFIGURED) return;
+  dirty = false; saving = true;
+  refs.state.set(st).catch(() => {}).then(() => { saving = false; });
+}, 400);
+
+/* ---------- confetti + sound ---------- */
+
+const cv = $('confetti'), cx = cv.getContext('2d');
+let bits = [];
+function sizeCv(){ cv.width = innerWidth; cv.height = innerHeight; }
+addEventListener('resize', sizeCv); sizeCv();
+function confettiBurst(){
+  const cols = ['#ffcf3f', '#3ba0ff', '#ff9b2f', '#ffffff'];
+  for (let i = 0; i < 200; i++) bits.push({ x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * .6,
+    w: 5 + Math.random() * 8, h: 8 + Math.random() * 12, vy: 2 + Math.random() * 4, vx: -1.5 + Math.random() * 3,
+    rot: Math.random() * 6, vr: -.2 + Math.random() * .4, c: cols[i % cols.length] });
+}
+(function loop(){
+  cx.clearRect(0, 0, cv.width, cv.height);
+  bits = bits.filter(b => b.y < cv.height + 30);
+  for (const b of bits){ b.x += b.vx; b.y += b.vy; b.rot += b.vr;
+    cx.save(); cx.translate(b.x, b.y); cx.rotate(b.rot); cx.fillStyle = b.c;
+    cx.fillRect(-b.w/2, -b.h/2, b.w, b.h); cx.restore(); }
+  requestAnimationFrame(loop);
+})();
+
+let ac = null;
+function cheer(){
+  if (!cfg.sound) return;
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return; }
+  const len = ac.sampleRate * 1.6, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++)
+    d[i] = (Math.random() * 2 - 1) * Math.min(1, i / (ac.sampleRate * .1)) * Math.pow(1 - i / len, 1.6) * .45;
+  const src = ac.createBufferSource(); src.buffer = buf;
+  const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1100;
+  src.connect(f).connect(ac.destination); src.start();
+}
+document.addEventListener('click', () => { if (ac && ac.state === 'suspended') ac.resume(); });
+
+/* ---------- wiring ---------- */
+
+loadGiftPrices().then(() => {
+  render();
+  if (!CONFIGURED) return;
+
+  refs.offset.on('value', s => { skew = s.val() || 0; });
+
+  refs.config.on('value', s => {
+    cfg = Object.assign(defaultConfig(), s.val() || {});
+    document.body.dataset.layout = cfg.layout || '9:16';
+    $('shelfA').dataset.key = ''; $('shelfB').dataset.key = '';
+    render();
+  });
+
+  // the panel writes the team list; a new seed means rebuild the bracket
+  refs.setup.on('value', s => {
+    const v = s.val();
+    if (!v || !v.teams || !v.teams.length) return;
+    if (v.seed === st.seed) return;
+    st = defaultState();
+    st.seed = v.seed;
+    st.rounds = buildBracket(v.teams);
+    st.phase = 'lobby';
+    const n = nextFixture(st.rounds);
+    if (n) { st.round = n.round; st.match = n.match; }
+    save(); render();
+  });
+
+  // one-off commands from the panel
+  refs.commands.on('child_added', s => {
+    const c = (s.val() || {}).cmd;
+    s.ref.remove();
+    if (c === 'start'){ const n = nextFixture(st.rounds); if (n) startFixture(n); }
+    else if (c === 'pause'){ st.paused = true; st.pausedLeft = Math.max(0, st.endsAt - now()); save(); render(); }
+    else if (c === 'resume'){ st.paused = false; st.endsAt = now() + st.pausedLeft; save(); render(); }
+    else if (c === 'end'){ endMatch(); }
+    else if (c === 'plusA'){ st.scoreA++; st.ball = 0; save(); render(); }
+    else if (c === 'plusB'){ st.scoreB++; st.ball = 0; save(); render(); }
+    else if (c === 'restart'){ const fx = currentFixture(); if (fx) startFixture({ round: st.round, match: st.match }); }
+  });
+
+  // pick up a match already in progress if the overlay was reopened
+  refs.state.once('value', s => {
+    const v = s.val();
+    if (v && v.rounds && v.rounds.length){
+      st = Object.assign(defaultState(), v);
+      if (st.phase === 'live' && st.endsAt < now()) st.phase = 'ended';
+      render();
+    }
+  });
+
+    db.ref('.info/connected').on('value', s => $('off').classList.toggle('on', !s.val()));
+});
+</script>
+</body>
+</html>

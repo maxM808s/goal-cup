@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal Cup — control</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#070d24;--card:#101c44;--line:#26356b;--gold:#ffcf3f;--green:#2f9e4f;--txt:#e9edff}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:Rubik,system-ui,sans-serif;padding:14px;font-size:14px}
+  h1{font-family:Anton,sans-serif;font-weight:400;letter-spacing:.05em;color:var(--gold);font-size:24px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.12em;opacity:.6;margin:0 0 10px}
+  .wrap{max-width:940px;margin:0 auto;display:grid;gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  label{font-size:12px;opacity:.75;display:block;margin-bottom:3px}
+  input,select,button{font-family:inherit;font-size:14px;border-radius:8px;border:1px solid var(--line);
+    background:#0a1436;color:var(--txt);padding:8px 10px}
+  input:focus,select:focus{outline:2px solid var(--gold);outline-offset:1px}
+  button{background:#1d2c60;cursor:pointer;font-weight:600;border-color:#33468a}
+  button:hover{background:#26377a}
+  button.primary{background:var(--green);border-color:#48c76c;color:#fff}
+  button.warn{background:#7c2233;border-color:#a83c50}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+  .pill{background:#0a1436;border:1px solid var(--line);border-radius:20px;padding:5px 11px;font-size:12px}
+  .pill b{color:var(--gold)}
+  .picker{max-height:210px;overflow:auto;display:flex;flex-wrap:wrap;gap:6px;padding-top:8px}
+  .picker button{font-size:12.5px;padding:5px 9px}
+  .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .entrant{display:flex;align-items:center;gap:7px;background:#0a1436;border:1px solid var(--line);
+    border-radius:8px;padding:5px 8px;font-weight:700}
+  .entrant img{width:22px;height:22px;object-fit:contain}
+  .entrant .x{margin-left:auto;cursor:pointer;opacity:.6;padding:0 4px}
+  .entrant .x:hover{opacity:1;color:#ff8080}
+  .entrants{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px}
+  .switch{display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;user-select:none}
+  .switch input{width:16px;height:16px;accent-color:var(--gold)}
+  .hint{font-size:12px;opacity:.6;line-height:1.55}
+  code{background:#0a1436;border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:12px;
+    word-break:break-all;display:inline-block}
+  .giftrow{display:flex;gap:6px;flex-wrap:wrap}
+  .giftrow > div{flex:1;min-width:150px}
+  .live{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-weight:700}
+  .live .big{font-family:Anton,sans-serif;font-size:26px}
+  .a{color:#3ba0ff}.b{color:#ff9b2f}
+  .setup{background:#3a2a08;border-color:#6b4d0d}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="row" style="justify-content:space-between">
+    <h1>&#127942; GOAL CUP — control</h1>
+    <span class="pill" id="conn">connecting…</span>
+  </div>
+
+  <div class="card setup" id="setupWarn" style="display:none">
+    <h2>Not connected yet</h2>
+    <p class="hint">Edit <code>firebase-config.js</code> with your Realtime Database URL, API key and a private room name, then reload. The setup guide has the walkthrough.</p>
+  </div>
+
+  <!-- live match -->
+  <div class="card">
+    <h2>Live</h2>
+    <div class="live" id="liveBox">—</div>
+    <div class="row" style="margin-top:11px">
+      <button class="primary" id="cStart">Start / next match</button>
+      <button id="cPause">Pause</button>
+      <button id="cEnd">End match now</button>
+      <button id="cRestart">Restart this match</button>
+      <button id="cPlusA">+1 blue</button>
+      <button id="cPlusB">+1 orange</button>
+    </div>
+  </div>
+
+  <!-- entrants -->
+  <div class="card">
+    <h2>Teams in the cup — <span id="count">0</span></h2>
+    <div class="entrants" id="entrants"></div>
+    <div class="row" style="margin-top:10px">
+      <input id="search" placeholder="Search a team… (English or עברית)" style="flex:1;min-width:180px">
+      <label class="switch"><input type="checkbox" id="heb"> עברית</label>
+      <button id="clear">Clear all</button>
+    </div>
+    <div class="picker" id="picker"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="build">Build the bracket</button>
+      <span class="hint" id="buildHint"></span>
+    </div>
+  </div>
+
+  <!-- gifts -->
+  <div class="card">
+    <h2>Which gifts push which side</h2>
+    <p class="hint" style="margin-bottom:9px">
+      These stay the same all tournament, whoever is playing — so you only ever set up eight events in Stream to Earn.
+      Blue is the left team, orange is the right team.
+    </p>
+    <label class="a">Blue side — left</label>
+    <div class="giftrow" id="leftGifts"></div>
+    <label class="b" style="margin-top:10px">Orange side — right</label>
+    <div class="giftrow" id="rightGifts"></div>
+    <datalist id="giftdata"></datalist>
+  </div>
+
+  <!-- rules -->
+  <div class="card">
+    <h2>Match rules</h2>
+    <div class="grid2">
+      <div><label>Match length (seconds)</label><input id="duration" type="number" min="15" step="15"></div>
+      <div><label>Coins to score a goal</label><input id="coinsPerGoal" type="number" min="5" step="10"></div>
+      <div><label>Break between matches (seconds)</label><input id="nextDelay" type="number" min="3" max="60"></div>
+      <div><label>Overlay shape</label>
+        <select id="layout">
+          <option value="9:16">9:16 — phone / TikTok</option>
+          <option value="4:5">4:5</option>
+          <option value="1:1">1:1</option>
+          <option value="16:9">16:9</option>
+          <option value="fill">Fill the source</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1"><label>Title line</label><input id="title" style="width:100%"></div>
+    </div>
+    <div class="row" style="margin-top:11px">
+      <label class="switch"><input type="checkbox" id="autoNext"> Roll into the next match automatically</label>
+      <label class="switch"><input type="checkbox" id="goldenGoal"> A draw goes to golden goal</label>
+      <label class="switch"><input type="checkbox" id="sound"> Overlay sound</label>
+      <button class="primary" id="saveCfg">Save settings</button>
+    </div>
+  </div>
+
+  <!-- test -->
+  <div class="card">
+    <h2>Test without going live</h2>
+    <div class="row">
+      <input list="giftdata" id="testGift" value="Rose" style="max-width:190px">
+      <input id="testUser" value="test viewer" style="max-width:150px">
+      <button id="testGo">Send test gift</button>
+      <span class="hint" id="testOut"></span>
+    </div>
+  </div>
+
+  <!-- stream to earn -->
+  <div class="card">
+    <h2>Stream to Earn</h2>
+    <p class="hint">One event per gift. Method <b>POST</b>, this URL, and the body below it.</p>
+    <p style="margin:8px 0"><code id="hookUrl">—</code> <button id="copyUrl">Copy</button></p>
+    <p class="hint">Body — swap the gift name per event:</p>
+    <p style="margin:6px 0"><code id="hookBody">—</code> <button id="copyBody">Copy</button></p>
+    <div id="bodyList" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="common.js"></script>
+<script src="teams.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let cfg = defaultConfig();
+let entrants = [];
+let liveState = null;
+
+if (!CONFIGURED) $('setupWarn').style.display = '';
+
+/* ---------- entrants ---------- */
+
+function drawEntrants(){
+  $('count').textContent = entrants.length;
+  $('entrants').innerHTML = entrants.map((t, i) =>
+    `<div class="entrant">${teamMarkHTML(t, 'crest')}<span>${esc(t.name)}</span><span class="x" data-i="${i}">✕</span></div>`
+  ).join('');
+  $('entrants').querySelectorAll('.x').forEach(x => x.onclick = e => {
+    entrants.splice(+e.target.dataset.i, 1); drawEntrants(); saveEntrants();
+  });
+  const n = entrants.length;
+  let size = 2; while (size < n) size *= 2;
+  $('buildHint').textContent = n < 2 ? 'Add at least two teams.'
+    : n === size ? `${n} teams, ${Math.log2(size)} rounds.`
+    : `${n} teams — ${size - n} will get a bye into round two.`;
+}
+
+function drawPicker(q){
+  q = (q || '').toLowerCase().trim();
+  const el = $('picker'); el.innerHTML = '';
+  for (const [group, list] of Object.entries(window.PRESET_TEAMS)){
+    const hits = list.filter(t => !q || t[0].toLowerCase().includes(q) || t[1].toLowerCase().includes(q) || (t[5] || '').includes(q));
+    if (!hits.length) continue;
+    const h = document.createElement('div');
+    h.style.cssText = 'width:100%;font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.5;margin-top:4px';
+    h.textContent = group; el.appendChild(h);
+    hits.slice(0, q ? 40 : 12).forEach(t => {
+      const b = document.createElement('button');
+      const heb = $('heb').checked && t[5];
+      b.innerHTML = (t[2] || `<span class="sw" style="background:${t[3]}"></span>`) + ' ' + (heb || t[0]);
+      b.onclick = () => addTeam(t);
+      el.appendChild(b);
+    });
+  }
+}
+function addTeam(t){
+  if (entrants.length >= 16) return alert('Sixteen teams is the most the bracket can show.');
+  const heb = $('heb').checked && t[5];
+  entrants.push({ id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+                  name: heb || t[0], abbr: t[1], flag: t[2], c1: t[3], c2: t[4], logo: true });
+  drawEntrants(); saveEntrants();
+}
+$('search').oninput = e => drawPicker(e.target.value);
+$('heb').onchange = () => drawPicker($('search').value);
+$('clear').onclick = () => { if (confirm('Remove every team?')) { entrants = []; drawEntrants(); saveEntrants(); } };
+
+function saveEntrants(){ if (CONFIGURED) refs.setup.child('teams').set(entrants); }
+$('build').onclick = () => {
+  if (entrants.length < 2) return alert('Add at least two teams first.');
+  if (!confirm('Build a fresh bracket? Any tournament in progress is wiped.')) return;
+  refs.setup.set({ teams: entrants, seed: Date.now() });
+};
+
+/* ---------- gifts per side ---------- */
+
+function giftInputs(){
+  for (const [side, id] of [['leftGifts', 'leftGifts'], ['rightGifts', 'rightGifts']]){
+    const list = cfg[side] || [];
+    $(id).innerHTML = [0,1,2,3].map(i =>
+      `<div><input list="giftdata" data-side="${side}" data-i="${i}" value="${esc(list[i] || '')}" placeholder="gift ${i+1}"></div>`
+    ).join('');
+  }
+  document.querySelectorAll('[data-side]').forEach(inp => inp.onchange = () => {
+    for (const side of ['leftGifts', 'rightGifts'])
+      cfg[side] = [...document.querySelectorAll(`[data-side="${side}"]`)].map(x => x.value.trim()).filter(Boolean);
+    saveCfg(); drawHooks();
+  });
+}
+
+/* ---------- settings ---------- */
+
+function fillCfg(){
+  $('duration').value = cfg.duration; $('coinsPerGoal').value = cfg.coinsPerGoal;
+  $('nextDelay').value = cfg.nextDelay || 8; $('title').value = cfg.title || '';
+  $('layout').value = cfg.layout || '9:16';
+  ['autoNext','goldenGoal','sound'].forEach(k => $(k).checked = !!cfg[k]);
+  giftInputs(); drawHooks();
+}
+function saveCfg(){
+  cfg.duration = Math.max(15, +$('duration').value || 90);
+  cfg.coinsPerGoal = Math.max(5, +$('coinsPerGoal').value || 150);
+  cfg.nextDelay = Math.max(3, +$('nextDelay').value || 8);
+  cfg.title = $('title').value; cfg.layout = $('layout').value;
+  ['autoNext','goldenGoal','sound'].forEach(k => cfg[k] = $(k).checked);
+  if (CONFIGURED) refs.config.set(cfg);
+}
+$('saveCfg').onclick = () => { saveCfg(); drawHooks(); flash('saveCfg', 'Saved'); };
+
+/* ---------- commands ---------- */
+
+function cmd(c){ if (CONFIGURED) refs.commands.push({ cmd: c, at: Date.now() }); }
+$('cStart').onclick   = () => cmd('start');
+$('cEnd').onclick     = () => cmd('end');
+$('cRestart').onclick = () => cmd('restart');
+$('cPlusA').onclick   = () => cmd('plusA');
+$('cPlusB').onclick   = () => cmd('plusB');
+$('cPause').onclick   = () => cmd(liveState && liveState.paused ? 'resume' : 'pause');
+
+/* ---------- live readout ---------- */
+
+function drawLive(){
+  const s = liveState;
+  if (!s || !s.rounds || !s.rounds.length){ $('liveBox').textContent = 'No bracket yet — add teams and build one.'; return; }
+  const fx = (s.rounds[s.round] || [])[s.match];
+  const nm = t => t ? t.name : '—';
+  $('liveBox').innerHTML =
+    `<span class="pill">${roundName(s.rounds, s.round)}</span>` +
+    `<span class="a">${esc(nm(fx && fx.a))}</span>` +
+    `<span class="big"><span class="a">${s.scoreA}</span> – <span class="b">${s.scoreB}</span></span>` +
+    `<span class="b">${esc(nm(fx && fx.b))}</span>` +
+    `<span class="pill">${s.phase}${s.paused ? ' · paused' : ''}</span>` +
+    (s.champion ? `<span class="pill">🏆 <b>${esc(s.champion.name)}</b></span>` : '');
+  $('cPause').textContent = s.paused ? 'Resume' : 'Pause';
+}
+
+/* ---------- stream to earn snippets ---------- */
+
+function drawHooks(){
+  const url = CONFIGURED ? `${CFG.databaseURL.replace(/\/$/, '')}/${ROOM}/events.json` : '—';
+  $('hookUrl').textContent = url;
+  $('hookBody').textContent = '{"gift": "Rose", "user": "{nickname}"}';
+  const all = [...(cfg.leftGifts || []), ...(cfg.rightGifts || [])].filter(Boolean);
+  $('bodyList').innerHTML = all.map(g =>
+    `<div style="margin:4px 0"><code>{"gift": "${esc(g)}", "user": "{nickname}"}</code>
+     <span class="hint">${esc(g)} · ${fmt(priceOf(g))} coins</span></div>`
+  ).join('');
+}
+$('copyUrl').onclick  = () => { navigator.clipboard.writeText($('hookUrl').textContent); flash('copyUrl','Copied'); };
+$('copyBody').onclick = () => { navigator.clipboard.writeText($('hookBody').textContent); flash('copyBody','Copied'); };
+
+$('testGo').onclick = () => {
+  if (!CONFIGURED) return alert('Connect Firebase first.');
+  const gift = $('testGift').value.trim();
+  refs.events.push({ gift, user: $('testUser').value || 'test', ts: firebase.database.ServerValue.TIMESTAMP })
+    .then(() => $('testOut').textContent = `sent ${gift} (${fmt(priceOf(gift))} coins)`)
+    .catch(e => $('testOut').textContent = 'failed: ' + e.message);
+};
+
+function flash(id, txt){ const b = $(id), o = b.textContent; b.textContent = txt; setTimeout(() => b.textContent = o, 1100); }
+
+/* ---------- boot ---------- */
+
+loadGiftPrices().then(g => {
+  const names = Object.keys(g).sort((a, b) => g[a] - g[b] || a.localeCompare(b));
+  $('giftdata').innerHTML = names.map(n => `<option value="${esc(n)}">${g[n]} coins</option>`).join('');
+  fillCfg(); drawEntrants(); drawPicker('');
+
+  if (!CONFIGURED) return;
+  refs.config.on('value', s => { if (s.val()) { cfg = Object.assign(defaultConfig(), s.val()); fillCfg(); } });
+  refs.setup.child('teams').on('value', s => { entrants = s.val() || []; drawEntrants(); });
+  refs.state.on('value', s => { liveState = s.val(); drawLive(); });
+  db.ref('.info/connected').on('value', s => {
+    const el = $('conn');
+    el.innerHTML = '<b>' + (s.val() ? 'live' : 'offline') + '</b>';
+    el.style.borderColor = s.val() ? '#48c76c' : '#a83c50';
+  });
+});
+</script>
+</body>
+</html>
