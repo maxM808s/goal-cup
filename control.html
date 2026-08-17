@@ -98,6 +98,7 @@
       <button class="btn" id="cRestart">&#8635; Restart</button>
       <button class="btn sm" id="cPlusA">+1 blue</button>
       <button class="btn sm" id="cPlusB">+1 orange</button>
+      <button class="btn warn" id="cEndAll">End tournament</button>
     </div>
   </div>
 
@@ -173,16 +174,7 @@
     <div id="evList"></div>
   </div>
 
-  <div class="card">
-    <h2>Test</h2>
-    <div class="row">
-      <input id="testGift" list="testdata" value="Rose" style="max-width:170px" placeholder="Gift name">
-      <datalist id="testdata"></datalist>
-      <input id="testUser" value="test viewer" style="max-width:140px">
-      <button class="btn pri" id="testGo">Send</button>
-      <span class="hint" id="testOut"></span>
-    </div>
-  </div>
+
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -354,13 +346,17 @@ function drawS2E(){
 }
 $('copyUrl').onclick = () => { navigator.clipboard.writeText($('hookUrl').textContent); flash('copyUrl','\u2713'); };
 
-/* ============ TEST ============ */
-$('testGo').onclick = () => {
-  if (!CONFIGURED) return alert('Connect Firebase first.');
-  const gift = $('testGift').value.trim();
-  refs.events.push({ gift, user: $('testUser').value || 'test', ts: firebase.database.ServerValue.TIMESTAMP })
-    .then(() => $('testOut').textContent = `sent ${gift} (${fmt(priceOf(gift))} coins)`)
-    .catch(e => $('testOut').textContent = 'error: ' + e.message);
+/* ============ END TOURNAMENT ============ */
+$('cEndAll').onclick = () => {
+  if (!confirm('End the entire tournament? This wipes the bracket.')) return;
+  if (CONFIGURED) {
+    refs.state.set(null);
+    refs.setup.set(null);
+    entrants = [];
+    drawEntrants();
+    drawPicker('');
+    drawLive();
+  }
 };
 
 function flash(id,txt){ const b=$(id),o=b.textContent; b.textContent=txt; setTimeout(()=>b.textContent=o,1200); }
@@ -368,8 +364,6 @@ function flash(id,txt){ const b=$(id),o=b.textContent; b.textContent=txt; setTim
 /* ============ BOOT ============ */
 loadGiftPrices().then(g => {
   allGifts = g;
-  const names = Object.keys(g).sort((a,b) => g[a]-g[b] || a.localeCompare(b));
-  $('testdata').innerHTML = names.map(n => `<option value="${esc(n)}">${g[n]} coins</option>`).join('');
   fillCfg(); drawEntrants(); drawPicker('');
   if (!CONFIGURED) return;
   refs.config.on('value', s => { if(s.val()){cfg=Object.assign(defaultConfig(),s.val());fillCfg();} });
