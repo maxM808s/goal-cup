@@ -196,13 +196,19 @@
   </div>
 
   <div class="tug">
+    <div style="text-align:center">
     <div class="sc a" id="scoreA">0</div>
+    <div style="font-size:clamp(7px,1.2vh,10px);color:var(--blue);opacity:.7;font-weight:700" id="coinsA"></div>
+  </div>
     <div class="barwrap">
       <div class="barfill" id="barfill"></div>
       <div class="pcts"><span id="pctA">50%</span><span id="pctB">50%</span></div>
       <div class="vs">VS</div>
     </div>
+    <div style="text-align:center">
     <div class="sc b" id="scoreB">0</div>
+    <div style="font-size:clamp(7px,1.2vh,10px);color:var(--orange);opacity:.7;font-weight:700" id="coinsB"></div>
+  </div>
   </div>
 
   <div class="pitch" id="pitch">
@@ -290,11 +296,16 @@ function render(){
   $('scoreA').textContent = st.scoreA;
   $('scoreB').textContent = st.scoreB;
 
-  const total = st.coinsA + st.coinsB;
-  const share = total ? st.coinsA / total : 0.5;
+  const totalCoins = st.coinsA + st.coinsB;
+  const share = totalCoins > 0 ? st.coinsA / totalCoins : 0.5;
   $('barfill').style.width = (share * 100).toFixed(1) + '%';
-  $('pctA').textContent = Math.round(share * 100) + '%';
-  $('pctB').textContent = (100 - Math.round(share * 100)) + '%';
+  const pA = Math.round(share * 100);
+  const pB = 100 - pA;
+  $('pctA').textContent = totalCoins > 0 ? pA + '%' : '50%';
+  $('pctB').textContent = totalCoins > 0 ? pB + '%' : '50%';
+  // coin totals shown in bar so you can see movement even without goals
+  if ($('coinsA')) $('coinsA').textContent = totalCoins > 0 ? fmt(st.coinsA) : '';
+  if ($('coinsB')) $('coinsB').textContent = totalCoins > 0 ? fmt(st.coinsB) : '';
 
   $('ball').style.left = (50 + Math.max(-1, Math.min(1, st.ball)) * 38) + '%';
 
