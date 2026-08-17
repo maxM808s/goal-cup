@@ -69,10 +69,38 @@
   .gpicker .g{font-size:11px;padding:3px 7px;border-radius:6px;cursor:pointer;border:1px solid var(--line);background:var(--card);display:flex;align-items:center;gap:4px;transition:all .12s}
   .gpicker .g:hover{border-color:var(--gold);background:#1a2a5e}
   .gpicker .g .gc{color:var(--gold);font-size:10px}
-  .live-box{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-weight:700;margin-bottom:10px}
-  .live-box .big{font-family:Anton,sans-serif;font-size:28px}
   .a{color:var(--blue)}.b{color:var(--orange)}
+
+  /* live match card */
+  .live-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+  .live-round{font-weight:700;font-size:13px}
+  .phase-pill{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;
+    padding:3px 10px;border-radius:99px;border:1px solid var(--line)}
+  .phase-pill.lobby{color:var(--dim)}
+  .phase-pill.live{color:#48c76c;border-color:#48c76c;background:rgba(72,199,108,.1)}
+  .phase-pill.ended{color:var(--gold);border-color:var(--gold);background:rgba(255,207,63,.1)}
+  .phase-pill.champion{color:var(--gold);border-color:var(--gold);background:rgba(255,207,63,.18)}
+  .phase-pill.paused{color:#ff8080;border-color:#ff8080}
+
+  .live-teams{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-bottom:10px}
+  .live-team{display:flex;align-items:center;gap:7px;overflow:hidden}
+  .live-team img,.live-team .chip{width:26px;height:26px;object-fit:contain;flex:0 0 auto}
+  .live-team .chip{border-radius:5px;display:grid;place-items:center;font-size:9px;font-weight:900;color:#fff}
+  .live-team .flagmark{font-size:22px;flex:0 0 auto}
+  .live-team span.tn{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .live-team.right{flex-direction:row-reverse;text-align:right}
+  .live-score{font-family:Anton,sans-serif;font-size:30px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+
+  .live-timer{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .live-clock{font-family:Anton,sans-serif;font-size:20px;color:var(--gold);min-width:52px}
+  .live-clock.low{color:#ff6b6b}
+  .live-tbar{flex:1;height:6px;background:var(--card2);border-radius:99px;overflow:hidden}
+  .live-tbar-fill{height:100%;background:var(--gold);width:0%;transition:width .3s linear}
+
   .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btns.row2{margin-top:6px}
+  #cStart.is-live{background:#173a24;border-color:#48c76c;color:#48c76c;cursor:default}
+  #cStart.is-busy{opacity:.6;cursor:wait}
   .evrow{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--card2);border:1px solid var(--line);border-radius:8px;margin-bottom:5px;font-size:12px}
   .evrow .gico{width:18px;height:18px;object-fit:contain}
   .evrow .gico.emo{font-size:14px;display:grid;place-items:center}
@@ -90,15 +118,37 @@
 
   <div class="card">
     <h2>Live match</h2>
-    <div class="live-box" id="liveBox">No bracket built yet.</div>
-    <div class="btns">
-      <button class="btn pri" id="cStart">&#9654; Start match</button>
-      <button class="btn" id="cPause">&#10074;&#10074; Pause</button>
-      <button class="btn" id="cEnd">End match</button>
-      <button class="btn" id="cRestart">&#8635; Restart</button>
-      <button class="btn sm" id="cPlusA">+1 blue</button>
-      <button class="btn sm" id="cPlusB">+1 orange</button>
-      <button class="btn warn" id="cEndAll">End tournament</button>
+
+    <div id="liveEmpty" class="hint">No bracket built yet — add teams below and build one.</div>
+
+    <div id="liveBody" style="display:none">
+      <div class="live-top">
+        <span class="live-round" id="liveRound">—</span>
+        <span class="phase-pill" id="livePhase">—</span>
+      </div>
+
+      <div class="live-teams">
+        <div class="live-team" id="liveTeamA"></div>
+        <div class="live-score"><span class="a" id="liveScoreA">0</span><span style="opacity:.4">–</span><span class="b" id="liveScoreB">0</span></div>
+        <div class="live-team right" id="liveTeamB"></div>
+      </div>
+
+      <div class="live-timer">
+        <span class="live-clock" id="liveClock">0:00</span>
+        <div class="live-tbar"><div class="live-tbar-fill" id="liveTbarFill"></div></div>
+      </div>
+
+      <div class="btns">
+        <button class="btn pri" id="cStart">&#9654; Start match</button>
+        <button class="btn" id="cPause">&#10074;&#10074; Pause</button>
+        <button class="btn" id="cEnd">End match</button>
+        <button class="btn" id="cRestart">&#8635; Restart</button>
+      </div>
+      <div class="btns row2">
+        <button class="btn sm" id="cPlusA">+1 blue</button>
+        <button class="btn sm" id="cPlusB">+1 orange</button>
+        <button class="btn warn sm" id="cEndAll" style="margin-left:auto">End tournament</button>
+      </div>
     </div>
   </div>
 
@@ -303,7 +353,7 @@ $('saveCfg').onclick = () => { saveCfg(); flash('saveCfg','Saved \u2713'); };
 
 /* ============ COMMANDS ============ */
 function cmd(c){ if(CONFIGURED) refs.commands.push({cmd:c,at:Date.now()}); }
-$('cStart').onclick   = () => cmd('start');
+$('cStart').onclick   = () => { startArmed = true; drawLive(); cmd('start'); };
 $('cEnd').onclick     = () => cmd('end');
 $('cRestart').onclick = () => cmd('restart');
 $('cPlusA').onclick   = () => cmd('plusA');
@@ -311,20 +361,73 @@ $('cPlusB').onclick   = () => cmd('plusB');
 $('cPause').onclick   = () => cmd(liveState && liveState.paused ? 'resume' : 'pause');
 
 /* ============ LIVE ============ */
+let clockSkew = 0;
+let startArmed = false;   // true right after Start is clicked, until the state confirms live
+
+function teamBlock(t){
+  if (!t) return '<span class="tn" style="opacity:.4">\u2014</span>';
+  return teamMarkHTML(t) + `<span class="tn">${esc(t.name)}</span>`;
+}
+
 function drawLive(){
   const s = liveState;
-  if (!s || !s.rounds || !s.rounds.length){ $('liveBox').textContent = 'No bracket yet.'; return; }
+  const empty = !s || !s.rounds || !s.rounds.length;
+  $('liveEmpty').style.display = empty ? '' : 'none';
+  $('liveBody').style.display  = empty ? 'none' : '';
+  if (empty) return;
+
   const fx = (s.rounds[s.round]||[])[s.match];
-  const nm = t => t ? t.name : '\u2014';
-  $('liveBox').innerHTML =
-    `<span class="pill">${roundName(s.rounds, s.round)}</span> ` +
-    `<span class="a">${esc(nm(fx&&fx.a))}</span> ` +
-    `<span class="big"><span class="a">${s.scoreA}</span> \u2013 <span class="b">${s.scoreB}</span></span> ` +
-    `<span class="b">${esc(nm(fx&&fx.b))}</span> ` +
-    `<span class="pill">${s.phase}${s.paused?' \u00B7 paused':''}</span>` +
-    (s.champion ? ` <span class="pill on">&#127942; ${esc(s.champion.name)}</span>` : '');
-  $('cPause').innerHTML = s.paused ? '&#9654; Resume' : '&#10074;&#10074; Pause';
+  $('liveRound').textContent = roundName(s.rounds, s.round) +
+    (fx ? ` \u00B7 match ${s.match + 1}/${s.rounds[s.round].length}` : '');
+
+  const phaseTxt = s.champion ? 'champion' : (s.paused ? 'paused' : s.phase);
+  const pillCls = s.champion ? 'champion' : (s.paused ? 'paused' : s.phase);
+  $('livePhase').textContent = s.champion ? ('\u{1F3C6} ' + s.champion.name) : phaseTxt;
+  $('livePhase').className = 'phase-pill ' + pillCls;
+
+  $('liveTeamA').innerHTML = teamBlock(fx && fx.a);
+  $('liveTeamB').innerHTML = teamBlock(fx && fx.b);
+  $('liveScoreA').textContent = s.scoreA;
+  $('liveScoreB').textContent = s.scoreB;
+
+  // once real state confirms live, drop the optimistic "starting..." lock
+  if (s.phase === 'live') startArmed = false;
+
+  const btn = $('cStart');
+  if (startArmed){
+    btn.textContent = 'Starting\u2026'; btn.className = 'btn pri is-busy'; btn.disabled = true;
+  } else if (s.phase === 'live'){
+    btn.textContent = '\u25CF Match live'; btn.className = 'btn is-live'; btn.disabled = true;
+  } else {
+    btn.textContent = '\u25B6 Start match'; btn.className = 'btn pri'; btn.disabled = false;
+  }
+
+  $('cPause').innerHTML = s.paused ? '\u25B6 Resume' : '\u2758\u2758 Pause';
+  $('cPause').disabled = s.phase !== 'live';
+  $('cEnd').disabled = s.phase !== 'live';
+
+  tickClock();
 }
+
+function tickClock(){
+  const s = liveState;
+  if (!s || s.phase !== 'live'){
+    $('liveClock').textContent = '0:00';
+    $('liveClock').classList.remove('low');
+    $('liveTbarFill').style.width = '0%';
+    return;
+  }
+  const nowMs = Date.now() + clockSkew;
+  const left = s.paused ? s.pausedLeft : Math.max(0, s.endsAt - nowMs);
+  const secs = Math.ceil(left / 1000);
+  $('liveClock').textContent = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+  $('liveClock').classList.toggle('low', secs <= 10);
+
+  const total = Math.max(1, (s.endsAt - s.startedAt) || (cfg.duration * 1000));
+  const pct = Math.max(0, Math.min(100, (left / total) * 100));
+  $('liveTbarFill').style.width = pct + '%';
+}
+setInterval(tickClock, 250);
 
 /* ============ STREAM TO EARN ============ */
 function drawS2E(){
@@ -369,6 +472,7 @@ loadGiftPrices().then(g => {
   refs.config.on('value', s => { if(s.val()){cfg=Object.assign(defaultConfig(),s.val());fillCfg();} });
   refs.setup.child('teams').on('value', s => { entrants=s.val()||[]; drawEntrants(); drawPicker($('search').value); });
   refs.state.on('value', s => { liveState=s.val(); drawLive(); });
+  refs.offset.on('value', s => { clockSkew = s.val() || 0; });
   db.ref('.info/connected').on('value', s => {
     const el=$('conn'); el.textContent=s.val()?'live':'offline';
     el.classList.toggle('on',!!s.val());
