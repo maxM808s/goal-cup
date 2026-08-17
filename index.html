@@ -130,7 +130,7 @@
   .gslot.hit{animation:hit .45s ease-out}
   @keyframes hit{30%{transform:scale(1.3)}}
 
-/* ---------- bracket ---------- */
+  /* ---------- bracket ---------- */
   .bracket{
     flex:0 0 auto;height:42%;overflow:hidden;padding:5px 4px;display:flex;gap:2px;
     background:linear-gradient(180deg,#0a1436,#070d24);align-items:stretch
@@ -557,8 +557,8 @@ loadGiftPrices().then(() => {
     else if (c === 'pause'){ st.paused = true; st.pausedLeft = Math.max(0, st.endsAt - now()); save(); render(); }
     else if (c === 'resume'){ st.paused = false; st.endsAt = now() + st.pausedLeft; save(); render(); }
     else if (c === 'end'){ endMatch(); }
-    else if (c === 'plusA'){ st.scoreA++; st.ball = 0; save(); render(); }
-    else if (c === 'plusB'){ st.scoreB++; st.ball = 0; save(); render(); }
+    else if (c === 'plusA'){ st.scoreA++; st.ball = 0; st.coinsA += cfg.coinsPerGoal; save(); render(); }
+    else if (c === 'plusB'){ st.scoreB++; st.ball = 0; st.coinsB += cfg.coinsPerGoal; save(); render(); }
     else if (c === 'restart'){ const fx = currentFixture(); if (fx) startFixture({ round: st.round, match: st.match }); }
   });
 
