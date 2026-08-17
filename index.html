@@ -188,8 +188,17 @@
   .tile.empty{opacity:.3;justify-content:center;font-size:11px;font-weight:900}
   .tile.now{border-color:var(--gold);background:rgba(255,207,63,.18);box-shadow:0 0 0 1px var(--gold)}
   .tile.out{opacity:.32}
+  .tile.new-win{animation:tileGlow 1.8s ease-out 2}
+  @keyframes tileGlow{
+    0%{box-shadow:0 0 0 0 rgba(255,207,63,0);background:rgba(255,207,63,0)}
+    30%{box-shadow:0 0 14px 3px rgba(255,207,63,.9);background:rgba(255,207,63,.4)}
+    100%{box-shadow:0 0 0 0 rgba(255,207,63,0);background:rgba(255,207,63,.06)}
+  }
 
   .trophy{font-size:clamp(20px,4.4vh,46px);line-height:1}
+  .trophy-crest{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 6px rgba(255,207,63,.7))}
+  .trophy-crest.chip{border-radius:6px;display:grid;place-items:center;font-family:Anton,sans-serif;font-size:10px}
+  .trophy-crest.flagmark{font-size:clamp(20px,3.6vh,32px)}
   .finalword{font-family:Anton,sans-serif;font-size:clamp(7px,1.2vh,11px);letter-spacing:.14em;
     color:var(--gold);opacity:.85}
   .champtile{font-weight:900;font-size:clamp(7px,1.25vh,11px);color:var(--gold);text-align:center;
@@ -201,10 +210,45 @@
     background:radial-gradient(circle at 50% 45%,rgba(0,0,0,.4),rgba(0,0,0,.88))
   }
   #champ.on{display:grid}
-  #champ .cup{font-size:clamp(50px,13vh,130px)}
+  #champ .crestwrap{position:relative;display:inline-block;margin-bottom:4px}
+  #champ .rays{position:absolute;left:50%;top:50%;width:clamp(140px,32vh,320px);height:clamp(140px,32vh,320px);
+    transform:translate(-50%,-50%);z-index:-1;
+    background:conic-gradient(from 0deg,transparent 0 10deg,rgba(255,207,63,.35) 10deg 18deg,transparent 18deg 36deg);
+    animation:spinRays 8s linear infinite;border-radius:50%}
+  @keyframes spinRays{to{transform:translate(-50%,-50%) rotate(360deg)}}
+  #champCup{animation:champPop .7s cubic-bezier(.2,1.7,.4,1)}
+  #champCup img,#champCup .flagmark,#champCup .chip{
+    width:clamp(70px,17vh,170px);height:clamp(70px,17vh,170px);object-fit:contain;display:block;
+    filter:drop-shadow(0 0 22px rgba(255,207,63,.75)) drop-shadow(0 8px 10px rgba(0,0,0,.5))
+  }
+  #champCup .chip{border-radius:22px;display:grid;place-items:center;font-family:Anton,sans-serif;
+    font-size:clamp(24px,5.4vh,54px);width:clamp(70px,17vh,170px);height:clamp(70px,17vh,170px)}
+  #champCup .flagmark{font-size:clamp(70px,17vh,170px);width:auto;height:auto;
+    filter:drop-shadow(0 0 18px rgba(255,207,63,.7))}
+  #champCup.cup{font-size:clamp(50px,13vh,130px)}
+  @keyframes champPop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
   #champ .w{font-family:Anton,sans-serif;color:var(--gold);font-size:clamp(26px,6vh,60px);letter-spacing:.03em}
   #champ .n{font-weight:900;font-size:clamp(16px,3.4vh,34px);margin-top:4px}
   #confetti{position:absolute;inset:0;z-index:31;pointer-events:none}
+
+  /* round-win banner: shown briefly whenever a match concludes and someone advances */
+  .roundwin{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.5);z-index:22;
+    background:rgba(6,12,32,.94);border:3px solid var(--gold);border-radius:16px;
+    padding:14px 26px;text-align:center;display:none;opacity:0;
+    transition:transform .5s cubic-bezier(.2,1.6,.4,1), opacity .3s
+  }
+  .roundwin.on{display:block;opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #rwcrest{margin:0 auto 6px}
+  #rwcrest img,#rwcrest .flagmark,#rwcrest .chip{
+    width:clamp(44px,9vh,88px);height:clamp(44px,9vh,88px);object-fit:contain;display:block;margin:0 auto;
+    filter:drop-shadow(0 0 12px rgba(255,207,63,.6))}
+  #rwcrest .chip{border-radius:12px;display:grid;place-items:center;font-family:Anton,sans-serif;
+    font-size:clamp(15px,3vh,28px)}
+  #rwcrest .flagmark{font-size:clamp(44px,9vh,88px);width:auto;height:auto}
+  .roundwin .rwname{font-weight:900;font-size:clamp(15px,2.8vh,26px);color:#fff}
+  .roundwin .rwsub{font-size:clamp(10px,1.9vh,16px);color:var(--gold);font-weight:700;margin-top:2px;
+    text-transform:uppercase;letter-spacing:.06em}
 
   .warn{
     position:absolute;inset:0;z-index:50;display:none;place-items:center;padding:24px;
@@ -306,9 +350,17 @@
   <div class="bracket" id="bracket"></div>
 
   <canvas id="confetti"></canvas>
+  <div class="roundwin" id="roundwin">
+    <div class="rwcrest" id="rwcrest"></div>
+    <div class="rwname" id="rwname"></div>
+    <div class="rwsub" id="rwsub">מתקדם לשלב הבא</div>
+  </div>
   <div id="champ">
     <div>
-      <div class="cup">&#127942;</div>
+      <div class="crestwrap" id="champCrestWrap">
+        <div class="rays"></div>
+        <div class="cup" id="champCup">&#127942;</div>
+      </div>
       <div class="w">האלופה</div>
       <div class="n" id="champName"></div>
     </div>
@@ -335,6 +387,8 @@
 
 let cfg = defaultConfig();
 let st  = defaultState();
+let champBoxKey = null;   // avoids rebuilding the champion crest on every render tick
+let advancingId = null, advancingTimer = null;   // id of the team whose tile should glow after winning
 let skew = 0;                       // firebase server clock - local clock
 let dirty = false, saving = false;
 
@@ -385,7 +439,17 @@ function render(){
   drawBracket();
 
   $('champ').classList.toggle('on', st.phase === 'champion');
-  if (st.phase === 'champion' && st.champion) $('champName').textContent = st.champion.name;
+  if (st.phase === 'champion' && st.champion){
+    $('champName').textContent = st.champion.name;
+    if (!champBoxKey || champBoxKey !== st.champion.id){
+      champBoxKey = st.champion.id;
+      const mark = teamMarkHTML(st.champion, 'crest');
+      $('champCup').innerHTML = mark || '\u{1F3C6}';
+      $('champCup').classList.toggle('cup', !mark);
+    }
+  } else {
+    champBoxKey = null;
+  }
   $('hint').textContent = st.phase === 'live' ? 'שלחו מתנה כדי להזיז את הכדור'
     : st.phase === 'ended' ? 'המשחק הבא מתחיל עוד רגע'
     : 'המשחק מתחיל בקרוב';
@@ -417,7 +481,8 @@ function drawBracket(){
 
   const tile = t => {
     if (!t) return `<div class="tile empty">?</div>`;
-    const cls = (liveIds.includes(t.id) ? ' now' : '') + (beaten.has(t.id) ? ' out' : '');
+    const cls = (liveIds.includes(t.id) ? ' now' : '') + (beaten.has(t.id) ? ' out' : '') +
+                (advancingId === t.id ? ' new-win' : '');
     return `<div class="tile${cls}">${teamMarkHTML(t)}<span class="tname">${esc(t.name)}</span></div>`;
   };
 
@@ -446,8 +511,11 @@ function drawBracket(){
 
 function midColumn(){
   const champ = st.champion || (st.rounds.length ? st.rounds[st.rounds.length - 1][0].winner : null);
+  const icon = champ
+    ? `<div style="width:clamp(20px,3.6vh,34px);height:clamp(20px,3.6vh,34px);margin:0 auto">${teamMarkHTML(champ, 'trophy-crest')}</div>`
+    : `<div class="trophy">\u{1F3C6}</div>`;
   return `<div class="bcol mid">
-    <div class="trophy">\u{1F3C6}</div>
+    ${icon}
     <div class="finalword">THE FINAL</div>
     ${champ ? `<div class="champtile">${esc(champ.name)}</div>` : ''}
   </div>`;
@@ -540,6 +608,11 @@ function endMatch(){
   autoAdvanceByes(st.rounds);
   save();
 
+  const isFinal = !nextFixture(st.rounds) && st.rounds.length &&
+                   st.rounds[st.rounds.length - 1][0].winner === winner;
+
+  if (!isFinal) showRoundWin(winner);   // final gets the big champion screen instead
+
   const next = nextFixture(st.rounds);
   if (!next){
     setTimeout(() => { st.phase = 'champion'; st.champion = winner; confettiBurst(); cheer(); save(); render(); }, 3500);
@@ -547,6 +620,21 @@ function endMatch(){
     setTimeout(() => startFixture(next), Math.max(3, cfg.nextDelay || 8) * 1000);
   }
   render();
+  advancingId = winner.id;
+  clearTimeout(advancingTimer);
+  advancingTimer = setTimeout(() => { advancingId = null; drawBracket(); }, 3700);
+}
+
+/* Brief celebration banner shown whenever a team wins a match and moves on. */
+function showRoundWin(team){
+  $('rwcrest').innerHTML = teamMarkHTML(team, 'rwmark') || '';
+  $('rwname').textContent = team.name;
+  const left = st.rounds.length - st.round - 1;   // rounds remaining after this one, before finding next round index shift
+  $('rwsub').textContent = 'עולה לשלב הבא';
+  $('roundwin').classList.add('on');
+  confettiBurst(70);
+  cheer();
+  setTimeout(() => $('roundwin').classList.remove('on'), 2600);
 }
 
 function startFixture(fx){
@@ -574,9 +662,10 @@ const cv = $('confetti'), cx = cv.getContext('2d');
 let bits = [];
 function sizeCv(){ cv.width = innerWidth; cv.height = innerHeight; }
 addEventListener('resize', sizeCv); sizeCv();
-function confettiBurst(){
+function confettiBurst(count){
+  const n = count || 200;
   const cols = ['#ffcf3f', '#3ba0ff', '#ff9b2f', '#ffffff'];
-  for (let i = 0; i < 200; i++) bits.push({ x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * .6,
+  for (let i = 0; i < n; i++) bits.push({ x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * .6,
     w: 5 + Math.random() * 8, h: 8 + Math.random() * 12, vy: 2 + Math.random() * 4, vx: -1.5 + Math.random() * 3,
     rot: Math.random() * 6, vr: -.2 + Math.random() * .4, c: cols[i % cols.length] });
 }
