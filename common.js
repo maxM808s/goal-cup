@@ -77,14 +77,24 @@ function giftIconHTML(name, cls) {
          `onerror="this.outerHTML='<span class=\\'${cls || 'gicon'} emo\\'>' + ` +
          `(GIFT_EMOJI['${norm(name).replace(/'/g, "")}'] || '\\u{1F381}') + '</span>'">`;
 }
+const FLAG_CDN = 'https://cdn.jsdelivr.net/gh/hampusborgos/country-flags@main/png100px/';
+
+function flagImg(iso, cls) {
+  const raw = 'https://raw.githubusercontent.com/hampusborgos/country-flags/main/png100px/' + iso + '.png';
+  return [
+    '<img class="', cls, ' flagimg" src="', FLAG_CDN, iso, '.png" alt=""',
+    ' onerror="if(!this._f){this._f=1;this.src=\'', raw, '\'}"',
+    ' style="border-radius:2px;object-fit:cover;display:block">'
+  ].join('');
+}
+
 function teamMarkHTML(t, cls) {
   if (!t) return '';
   const c = cls || 'crest';
-  if (t.logo) return `<img class="${c}" src="logos/${slug(t.name)}.png" alt="" ` +
-                     `onerror="this.outerHTML='<span class=\\'${c} chip\\' style=\\'background:${t.c1}\\'>' + ` +
-                     `'${esc((t.abbr || t.name || '?').slice(0, 3))}' + '</span>'">`;
-  if (t.flag) return `<span class="${c} flagmark">${t.flag}</span>`;
-  return `<span class="${c} chip" style="background:${t.c1};color:${pickInk(t.c1)}">${esc((t.abbr || t.name || '?').slice(0, 3))}</span>`;
+  if (t.iso) return flagImg(t.iso, c);
+  if (t.logo) return '<img class="' + c + '" src="logos/' + slug(t.name) + '.png" alt="">';
+  if (t.flag) return '<span class="' + c + ' flagmark">' + t.flag + '</span>';
+  return '<span class="' + c + ' chip" style="background:' + t.c1 + ';color:' + pickInk(t.c1) + '">' + esc((t.abbr || t.name || '?').slice(0, 3)) + '</span>';
 }
 function pickInk(hex) {
   const h = String(hex || '#000').replace('#', '');
