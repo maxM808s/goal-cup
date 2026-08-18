@@ -179,10 +179,10 @@
     overflow:hidden
   }
   .tile .tname{
-    font-size:clamp(5px,.95vh,9px);font-weight:700;line-height:1.1;text-align:center;
-    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.9
+    font-size:clamp(7px,1.3vh,12px);font-weight:800;line-height:1.1;text-align:center;
+    letter-spacing:.02em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.95
   }
-  .tile .crest{width:clamp(13px,2.4vh,26px);height:clamp(13px,2.4vh,26px);object-fit:contain}
+  .tile .crest{width:clamp(14px,2.6vh,28px);height:clamp(14px,2.6vh,28px);object-fit:contain}
   .tile .crest.chip{border-radius:4px;display:grid;place-items:center;font-size:7px;font-weight:900}
   .tile .flagmark{font-size:clamp(12px,2.2vh,24px);line-height:1}
   .tile.empty{opacity:.3;justify-content:center;font-size:11px;font-weight:900}
@@ -483,7 +483,10 @@ function drawBracket(){
     if (!t) return `<div class="tile empty">?</div>`;
     const cls = (liveIds.includes(t.id) ? ' now' : '') + (beaten.has(t.id) ? ' out' : '') +
                 (advancingId === t.id ? ' new-win' : '');
-    return `<div class="tile${cls}">${teamMarkHTML(t)}<span class="tname">${esc(t.name)}</span></div>`;
+    // short code in the tile (guaranteed to fit + guaranteed unique) - full
+    // name still shows as a tooltip and everywhere else (live card, banners)
+    const label = t.abbr || t.name.slice(0, 3).toUpperCase();
+    return `<div class="tile${cls}" title="${esc(t.name)}">${teamMarkHTML(t)}<span class="tname">${esc(label)}</span></div>`;
   };
 
   // one match total: both teams flank the trophy
